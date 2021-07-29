@@ -368,24 +368,46 @@ bool CollisionManager::pointRectCheck(const glm::vec2 point, const glm::vec2 rec
 }
 
 // assumptions - the list of objects are stored so that they are facing the target and the target is loaded last
-bool CollisionManager::LOSCheck(glm::vec2 start_point, glm::vec2 end_point, const std::vector<DisplayObject*>& objects, DisplayObject* target)
+bool CollisionManager::LOSCheck(Agent* agent, glm::vec2 end_point, const std::vector<DisplayObject*>& objects, DisplayObject* target)
 {
-	// Check collision with obstacles first.
+	const auto start_point = agent->getTransform()->position;
+	// Check collision with objects.
 	for (auto object : objects)
 	{
 		auto objectOffset = glm::vec2(object->getWidth() * 0.5f, object->getHeight() * 0.5f);
-		if (lineRectCheck(start_point, end_point, object->getTransform()->position - objectOffset, 
-			object->getWidth(), object->getHeight()))
+		const auto rect_start = object->getTransform()->position - objectOffset;
+		const auto width = object->getWidth();
+		const auto height = object->getHeight();
+
+		switch (object->getType())
 		{
-			return false;
+		case OBSTACLE:
+			if (lineRectCheck(start_point, end_point, rect_start, width, height))
+			{
+				return false;
+			}
+			break;
+		case TARGET:
+			switch (agent->getType())
+			{
+			case AGENT:
+				if (lineRectCheck(start_point, end_point, rect_start, width, height))
+				{
+					return true;
+				}
+				break;
+			case PATH_NODE:
+				if (lineRectEdgeCheck(start_point, rect_start, width, height))
+				{
+					return true;
+				}
+				break;
+			default:
+				std::cout << "ERROR: " << agent->getType() << std::endl;
+				break;
+			}
+			break;
 		}
-	}
-	// Now check if hitting target.
-	auto targetOffset = glm::vec2(target->getWidth() * 0.5f, target->getHeight() * 0.5f);
-	if (lineRectCheck(start_point, end_point, target->getTransform()->position - targetOffset,
-		target->getWidth(), target->getHeight()))
-	{
-		return true;
 	}
 	// Nothing hit.
 	return false;
