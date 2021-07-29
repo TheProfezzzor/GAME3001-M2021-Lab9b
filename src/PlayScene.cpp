@@ -212,6 +212,7 @@ bool PlayScene::m_CheckAgentLOS(Agent* agent, DisplayObject* target_object)
 		auto hasLOS = CollisionManager::LOSCheck(agent, agentTarget, contactList, target_object);
 		agent->setHasLOS(hasLOS);
 	}
+	return hasLOS;
 }
 
 void PlayScene::m_CheckPathNodeLOS()
@@ -227,5 +228,16 @@ void PlayScene::m_CheckPathNodeLOS()
 
 PathNode* PlayScene::m_findClosestPathNode(Agent* agent)
 {
-
+	auto min = FLT_MAX;
+	PathNode* closestPathNode = nullptr;
+	for (auto path_node : m_pGrid)
+	{
+		const auto distance = Util::distance(agent->getTransform()->position, path_node->getTransform()->position);
+		if (distance < min ) // && path_node->hasLOS()
+		{
+			min = distance;
+			closestPathNode = path_node;
+		}
+	}
+	return closestPathNode;
 }
